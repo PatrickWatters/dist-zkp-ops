@@ -3,6 +3,7 @@ import java.io.FileReader;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Paths;
@@ -13,7 +14,8 @@ public class Testing {
 
   public static void main(String[] args) throws JsonSyntaxException, JsonIOException, FileNotFoundException {
     
-    TestMSMFromJsonFile("msm_data_example/8M_scalars.json");
+    //TestMSMFromJsonFile("msm_data_example/4_scalars.json");
+
 
     //TestMSMFromJsonFile("msm_data_example/4_scalars.json");
     // TestFromJsonFileFolder("C:\\Users\\watters\\projects\\bellman\\msm_json_examples");
