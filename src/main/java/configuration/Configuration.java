@@ -1,5 +1,4 @@
 package configuration;
-import org.apache.spark.SparkContext;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.storage.StorageLevel;
 import scala.Tuple2;
@@ -16,11 +15,14 @@ import java.util.Stack;
  * are provided upon instantiation and can be changed using the provided setter methods.
  */
 public class Configuration implements Serializable {
-
-    /* Used for tracking of elapsed time since initialization */
+    
+/* Used for tracking of elapsed time since initialization */
     private final long startTime;
-
-    /* Context */
+  /* Random Number Generator */
+  /* Random Number Generator */
+  protected long seed;
+  protected byte[] secureSeed;
+      /* Context */
     protected String context;
     /* Verbose Flag */
     private boolean verboseFlag;
@@ -45,95 +47,58 @@ public class Configuration implements Serializable {
     private int numPartitions;
 
     private StorageLevel storageLevel;
-    private JavaSparkContext sparkContext;
+    private JavaSparkContext sc;
 
     /* Debug Flag runs assertion checks for debugging */
     private boolean debugFlag;
 
-    public Configuration(boolean isDistrubutedMode)
-    {
+    public Configuration() {
+        seed = 5;
+        secureSeed = null;
+        isDistrubutedMode = true;
+        verboseFlag = true;
+        timerLogs = new HashMap<>();
+        indentation = 0;
+        previousEnd = false;
+        startTime = System.nanoTime();
+    
+        runtimeFlag = true;
+        context = "config-default";
+        rootDirectory = "/tmp/spark-events/";
+        runtimeFiles = new HashMap<>();
+        runtimeLogs = new HashMap<>();
+        
+        numExecutors = 1;
+        numCores = 1;
+        numMemory = 2;
+        numPartitions = 2;
+        storageLevel = StorageLevel.MEMORY_AND_DISK_SER();
+    
+        debugFlag = false;
+       // stats_collector = new StatsStorage();
+      }
+
+
+ public Configuration(boolean isDistrubutedMode,
+      final int numExecutors,
+      final int numCores,
+      final int numMemory,
+      final int numPartitions,
+      final JavaSparkContext sc,
+      final StorageLevel storageLevel)
+      {
+        this();
         this.isDistrubutedMode = isDistrubutedMode;
-        this.verboseFlag = true;
-        this.timerLogs = new HashMap<>();
-        this.indentation = 0;
-        this.previousEnd = false;
-        this.startTime = System.nanoTime();
-
-        this.runtimeFlag = true;
-        this.context = "config-default";
-        this.rootDirectory = "/tmp/spark-events/";
-        this.runtimeFiles = new HashMap<>();
-        this.runtimeLogs = new HashMap<>();
-        this.debugFlag = false;
-
-        this.numExecutors = 1;
-        this.numCores = 1;
-        this.numMemory = 16;
-        this.numPartitions = 2;
-        this.storageLevel = StorageLevel.MEMORY_AND_DISK_SER();
-        this.sparkContext = null;
-    }
-
-    public StorageLevel storageLevel() {
-        return this.storageLevel;
-    }
-
-
-    public boolean verboseFlag() {
-        return this.verboseFlag;
-    }
-
-    public boolean debugFlag() {
-        return this.debugFlag;
-    }
-
-    public String context() {
-        return this.context;
-    }
-
-    public JavaSparkContext sparkContext() {
-        return this.sparkContext;
-    }
-
-    public boolean isDistrubtedMode() {
-        return this.isDistrubutedMode;
-     }
-
-    public int numExecutors() {
-        return this.numExecutors;
-     }
- 
-     public int numCores() {
-         return this.numCores;
-      }
- 
-      public int numMemory() {
-         return this.numMemory;
-      }
- 
-      public int numPartitions() {
-         return this.numPartitions;
-      }
-
-    public void setSparkContext( JavaSparkContext sparkContext) {
-        this.sparkContext = sparkContext;
-    }
-
-    public void setNumExecutors( int numExecutors) {
         this.numExecutors = numExecutors;
-    }
-
-    public void setNumCores(int numCores) {
         this.numCores = numCores;
-    }
-
-    public void setNumMemory(int numMemory) {
         this.numMemory = numMemory;
-    }
-
-    public void setNumPartitions( int numPartitions) {
         this.numPartitions = numPartitions;
-    }
+        this.sc = sc;
+        this.storageLevel = storageLevel;
+       // sc.setLogLevel("INFO");
+       sc.setLogLevel("ERROR");
+
+      }
 
 
     /**
@@ -163,6 +128,7 @@ public class Configuration implements Serializable {
     public void beginLog(final String message) {
         beginLog(message, true);
     }
+    
 
     /**
      * Prints the message and prints the total runtime of the code section.
@@ -377,8 +343,13 @@ public class Configuration implements Serializable {
         }
     }
 
-  
+    public void setSeed(final long _seed) {
+        seed = _seed;
+      }
 
+    public void setSecureSeed(final byte[] _secureSeed) {
+        secureSeed = _secureSeed;
+      }
 
     public void setVerboseFlag(final boolean _verboseFlag) {
         verboseFlag = _verboseFlag;
@@ -393,13 +364,52 @@ public class Configuration implements Serializable {
     }
 
     public void setContext(final String _context) {
-        final String metadata =
-                "-" + numExecutors + "exec-" + numCores + "cpu-"
-                        + numMemory + "mem-" + numPartitions + "partitions";
-    //context = _context + metadata;
     context = _context;
     }
 
+    public int numExecutors() {
+        return numExecutors;
+      }
+    
+      public int numCores() {
+        return numCores;
+      }
+    
+      public int numMmeory() {
+        return numMemory;
+      }
+    
+      public StorageLevel storageLevel() {
+        return storageLevel;
+      }
+    
+      public int numPartitions() {
+        return numPartitions;
+      }
+    
+      public long seed() {
+        return seed;
+      }
+    
+      public byte[] secureSeed() {
+        return secureSeed;
+      }
+    
+      public boolean verboseFlag() {
+        return verboseFlag;
+      }
+    
+      public boolean debugFlag() {
+        return debugFlag;
+      }
+    
+      public String context() {
+        return context;
+      }
+    
+      public JavaSparkContext sparkContext() {
+        return sc;
+      }
   
 
     private void printIndentation() {
@@ -425,7 +435,8 @@ public class Configuration implements Serializable {
         // If runtimeFiles does not contain this context, then record a context and file name.
         if (!runtimeFiles.containsKey(context)) {
             //final String runtimeFileName = rootDirectory + "src/main/resources/logs/" + context + ".csv";
-            final String runtimeFileName = rootDirectory + "src/main/resources/logs/" + context + ".tsv";
+            //final String runtimeFileName = rootDirectory + "src/main/resources/logs/" + context + ".tsv";
+            final String runtimeFileName = "logs/" +  context + ".tsv";
 
             runtimeFiles.put(context, new Tuple2<>(runtimeFileName, false));
         }
@@ -454,7 +465,7 @@ public class Configuration implements Serializable {
     }
 
     private void storeSparkConfiguration(final String contextFileName) {
-        if (this.sparkContext != null) {
+        if (this.sc != null) {
             final String system =
                     "\n----------------------------------------------------------------------------\n"
                             + "Instantiated as: \n"
@@ -462,7 +473,7 @@ public class Configuration implements Serializable {
                             + numCores + " cores per executor\n"
                             + numMemory + " GB RAM memory per executor\n"
                             + numPartitions + " partitions per RDD\n\nSpark Configuration:\n";
-            final String debugString = this.sparkContext.getConf().toDebugString();
+            final String debugString = this.sc.getConf().toDebugString();
 
             final String systemFileName =
                     contextFileName.substring(0, contextFileName.length() - 4) + "-system.txt";
@@ -487,5 +498,7 @@ public class Configuration implements Serializable {
             }
         }
     }
+
+
 
 }

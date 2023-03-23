@@ -7,23 +7,44 @@
 
 package relations.objects;
 
+import algebra.fields.AbstractFieldElement;
 import java.io.Serializable;
 
-public class LinearTerm<FieldT> implements Serializable {
+// Equivalent to:
+// https://github.com/clearmatics/libsnark/blob/master/libsnark/relations/variable.hpp#L92
+public class LinearTerm<FieldT extends AbstractFieldElement<FieldT>> implements Serializable {
 
-    private final long index;
-    private final FieldT value;
+  private final long index;
+  private final FieldT value;
 
-    public LinearTerm(final long _index, final FieldT _value) {
-        index = _index;
-        value = _value;
+  public LinearTerm(final long _index, final FieldT _value) {
+    index = _index;
+    value = _value;
+  }
+
+  public long index() {
+    return index;
+  }
+
+  public FieldT value() {
+    return value;
+  }
+
+  public boolean equals(final LinearTerm<?> o) {
+    return (index == o.index) && value.equals(o.value);
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
     }
-
-    public long index() {
-        return index;
+    if (o == null) {
+      return false;
     }
-
-    public FieldT value() {
-        return value;
+    if (!(o instanceof LinearTerm<?>)) {
+      return false;
     }
+    return (equals((LinearTerm<?>) o));
+  }
 }

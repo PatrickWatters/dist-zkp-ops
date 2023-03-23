@@ -23,12 +23,10 @@ public class Testing {
 
   private static boolean TestMSMFromJsonFile(String file_path)
       throws JsonSyntaxException, JsonIOException, FileNotFoundException {
-    Executor executor = new Executor();
     MSMData msm_data = new Gson().fromJson(new FileReader(file_path), MSMData.class);
     msm_data.CleanUpLists();
-
-
-    executor.ExecuteMSM(msm_data);
+    
+    ZKPServer.ExecuteMSM(msm_data);
     
     //Triplet<String, String, Boolean> response = new Triplet.with(msm_data.ouput_x_value, msm_data.ouput_y_value, msm_data.result_is_at_point_of_infinity);
     //Quartet<String, String, Integer, String> quartet = new Quartet<String, String, Integer, String >("Sophia", "Female", 22, "Marketing Manager");  
