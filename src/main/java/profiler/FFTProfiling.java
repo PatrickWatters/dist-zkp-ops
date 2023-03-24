@@ -36,7 +36,9 @@ public class FFTProfiling {
   public static void distributedFFTProfiling(final Configuration config, final long size) {
     final BN254aFr fieldFactory = new BN254aFr(2L);
     final JavaPairRDD<Long, BN254aFr> distributed = FFTGenerator.generateData(config, size);
-
+    
+    //System.out.format("[Profiler] - Genereated RDD of size %d\n", distributed.count());
+    
     final long k = MathUtils.lowestPowerOfTwo((long) Math.sqrt(size));
     final long rows = size / k;
     final long cols = k;
@@ -52,7 +54,11 @@ public class FFTProfiling {
     config.beginRuntimeMetadata("GB RAM per executor", Long.valueOf(config.numMmeory()));
     config.beginLog("FFT");
     config.beginRuntime("FFT");
+    
+    //count() is an action operation that triggers the transformations to execute.
     DistributedFFT.radix2FFT(distributed, rows, cols, fieldFactory).count();
+    //DistributedFFT.radix2FFT(distributed, rows, cols, fieldFactory);
+
     config.endRuntime("FFT");
     config.endLog("FFT");
 

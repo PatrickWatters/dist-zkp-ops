@@ -52,7 +52,6 @@ public class Profiler {
           app, config.numExecutors(), config.numPartitions(), size);
   
         FFTProfiling.distributedFFTProfiling(config, size);
-        System.out.format("\n[Profiler] - End Serial %s - %d size\n", app, size);
         System.out.format(
           "\n[Profiler] - End Distributed %s - %d executors - %d partitions - %d size\n\n",
           app, config.numExecutors(), config.numPartitions(), size);
